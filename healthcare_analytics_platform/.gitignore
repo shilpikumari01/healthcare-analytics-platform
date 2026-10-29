@@ -8,4 +8,5 @@ venv/
 exports/*.xlsx
 data/*.json
 *.pbix.lock
+.streamlit/secrets.toml
 

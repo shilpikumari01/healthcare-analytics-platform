@@ -3,17 +3,11 @@ import pandas as pd
 import streamlit as st
 import google.generativeai as genai
 
-# Pehle config file se key try karein, agar missing ho toh handle karein
+# Config file fallback
 try:
     from config import GEMINI_API_KEY
 except ImportError:
     GEMINI_API_KEY = ""
-
-# Streamlit Cloud Secrets se API key safe load karein (Crash-Proof)
-try:
-    GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", os.getenv("GEMINI_API_KEY", GEMINI_API_KEY))
-except Exception:
-    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY)
 
 
 def generate_template_summary(kpi_data, dept_df):
@@ -41,13 +35,28 @@ def generate_template_summary(kpi_data, dept_df):
 
 def generate_executive_summary(kpi_data, dept_df):
     """Generates an AI summary using Google Gemini API if key is present, otherwise falls back to template."""
+    
+    # Secrets loading sequence
+    api_key = GEMINI_API_KEY
+    if not api_key:
+        api_key = os.getenv("GEMINI_API_KEY", "")
+        
+    if not api_key:
+        try:
+            if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+                api_key = st.secrets["GEMINI_API_KEY"]
+        except Exception:
+            api_key = ""
+
     # Check if API key is valid
-    if not GEMINI_API_KEY or GEMINI_API_KEY.strip() in ["your_google_gemini_api_key_here", ""]:
+    if not api_key or api_key.strip() in ["your_google_gemini_api_key_here", ""]:
         return generate_template_summary(kpi_data, dept_df)
 
     try:
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        genai.configure(api_key=api_key)
+        
+        # Exact model string required by the API
+        model = genai.GenerativeModel("gemini-3.8-flash")
 
         dept_summary = (
             dept_df.to_string(index=False)
@@ -79,5 +88,5 @@ def generate_executive_summary(kpi_data, dept_df):
             return generate_template_summary(kpi_data, dept_df)
 
     except Exception as e:
-        # Any API error falls back cleanly to template summary
+        st.error(f"Gemini API Error: {e}")
         return generate_template_summary(kpi_data, dept_df)

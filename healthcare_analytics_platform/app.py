@@ -1,12 +1,16 @@
 import streamlit as st
 import pandas as pd
 import os
+
+# Streamlit config sabse pehle call honi chahiye (StreamlitAPIException fix)[cite: 2]
+st.set_page_config(page_title="Healthcare Analytics Platform", layout="wide")
+
+# Baaki modules config ke baad import honge
 from src.cleaner import clean_healthcare_data, load_data_to_mysql, export_to_excel
 from src.kpi_engine import fetch_summary_kpis, fetch_department_kpis, fetch_monthly_kpis, fetch_doctor_performance
 from src.ai_summarizer import generate_executive_summary
 from src.api_fetcher import fetch_external_patient_data
 
-st.set_page_config(page_title="Healthcare Analytics Platform", layout="wide")
 st.title("🏥 Healthcare Data Analytics & AI-Powered Insights Platform")
 
 st.sidebar.header("📁 Data Ingestion Pipeline")
@@ -40,13 +44,14 @@ with tab1:
             st.markdown("### Department Breakdown")
             dept_df = fetch_department_kpis()
             st.dataframe(dept_df, use_container_width=True)
-            st.bar_chart(dept_df.set_index("department_name")["total_visits"])
+            if not dept_df.empty and "department_name" in dept_df.columns:
+                st.bar_chart(dept_df.set_index("department_name")["total_visits"])
 
         with col_right:
             st.markdown("### Monthly Trend")
             monthly_df = fetch_monthly_kpis()
             st.dataframe(monthly_df, use_container_width=True)
-            if not monthly_df.empty:
+            if not monthly_df.empty and "month_year" in monthly_df.columns:
                 st.line_chart(monthly_df.set_index("month_year")["monthly_visits"])
 
         st.markdown("### Doctor Performance")
@@ -69,6 +74,46 @@ with tab3:
             st.markdown(generate_executive_summary(fetch_summary_kpis(), fetch_department_kpis()))
 
 with tab4:
-    st.subheader("External API Data Integration")
+    st.subheader("🌐 External API Data Integration")
+    st.caption("Live stream and staging area for third-party medical network records.")
+
     if st.button("Fetch API Data"):
-        st.dataframe(fetch_external_patient_data(), use_container_width=True)
+        with st.spinner("Fetching data from external endpoint..."):
+            api_df = fetch_external_patient_data()
+
+        if not api_df.empty:
+            st.success("Data successfully fetched from External API!")
+
+            # Check column names (Handles both 'City' and 'city')
+            city_col = "City" if "City" in api_df.columns else ("city" if "city" in api_df.columns else None)
+
+            # 1. KPI Summary Cards
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(label="Total External Records", value=len(api_df))
+            with col2:
+                cities_count = api_df[city_col].nunique() if city_col else 0
+                st.metric(label="Unique Regions / Cities", value=cities_count)
+            with col3:
+                st.metric(
+                    label="Integration Status",
+                    value="Active Stream",
+                    delta="Synced",
+                )
+
+            st.markdown("---")
+
+            # 2. Interactive Graph Visualization
+            if city_col:
+                st.subheader("📊 External Patient Distribution by Region")
+                city_counts = api_df[city_col].value_counts()
+                st.bar_chart(city_counts)
+                st.markdown("---")
+
+            # 3. Raw Data Preview
+            st.subheader("📋 Raw External Records Table")
+            st.dataframe(api_df, use_container_width=True)
+        else:
+            st.error("Failed to fetch data from external API endpoint.")
+    
+               
