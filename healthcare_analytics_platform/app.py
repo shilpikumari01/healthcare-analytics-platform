@@ -1,10 +1,9 @@
-import streamlit as st
-import pandas as pd
 import os
+import pandas as pd
 import streamlit as st
 from PIL import Image
 
-# Streamlit config sabse pehle call honi chahiye (StreamlitAPIException fix)[cite: 2]
+# Streamlit config sabse pehle call honi chahiye
 st.set_page_config(page_title="Healthcare Analytics Platform", layout="wide")
 
 # Baaki modules config ke baad import honge
@@ -28,8 +27,16 @@ if uploaded_file is not None:
             st.session_state["quality_report"] = quality_report
             st.success("✅ Data ingested, sanitized, and stored in MySQL!")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Analytics Dashboard", "🧹 Data Quality Report", "🤖 AI Executive Summary", "🌐 External API Integration"])
+# 5 Tabs created to include Data Quality Report as well as Power BI
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📊 Analytics Dashboard", 
+    "🧹 Data Quality Report",
+    "📈 Power BI Executive Dashboard", 
+    "🤖 AI Executive Summary", 
+    "🌐 External API Integration"
+])
 
+# Tab 1: Key Performance Indicators
 with tab1:
     st.subheader("Key Performance Indicators (KPIs)")
     try:
@@ -62,13 +69,30 @@ with tab1:
     except Exception as e:
         st.error(f"Error fetching metrics from database: {e}. Please run cleaning pipeline.")
 
+# Tab 2: Data Quality Report (RESTORED)
 with tab2:
+    st.header("🧹 Data Sanitation & Quality Report")
+    if "quality_report" in st.session_state:
+        st.json(st.session_state["quality_report"])
+    else:
+        st.info("ℹ️ Please upload a CSV file and run the Data Cleaning Pipeline from the sidebar to generate the Data Quality Report.")
+
+# Tab 3: Power BI Dashboard
+with tab3:
     st.header("📊 Power BI Executive Analytics Dashboard")
     st.info("💡 Interactive visual report built on Healthcare Analytics Warehouse.")
     
-    # Power BI Dashboard Image Preview
-    image = Image.open('dashboard_preview.png')
-    st.image(image, caption='Healthcare Executive Dashboard (Power BI Desktop)', use_container_width=True)
+    # Reports folder path define karein
+    image_path = os.path.join('reports', 'dashboard_preview.png')
+    
+    if os.path.exists(image_path):
+        image = Image.open(image_path)
+        st.image(image, caption='Healthcare Executive Dashboard (Power BI Desktop)', use_column_width=True)
+    elif os.path.exists('dashboard_preview.png'):
+        image = Image.open('dashboard_preview.png')
+        st.image(image, caption='Healthcare Executive Dashboard (Power BI Desktop)', use_column_width=True)
+    else:
+        st.warning("⚠️ `dashboard_preview.png` not found in reports folder.")
     
     st.markdown("""
     ### 📈 Executive Insights Summary:
@@ -77,14 +101,15 @@ with tab2:
     * **Fulfillment Analysis:** Status breakdown comparing Completed (71.4%) vs Cancelled/No-Show appointments.
     """)
 
-
-with tab3:
+# Tab 4: GenAI Executive Summary
+with tab4:
     st.subheader("GenAI-Powered Executive Summary")
     if st.button("Generate Summary"):
         with st.spinner("Generating summary..."):
             st.markdown(generate_executive_summary(fetch_summary_kpis(), fetch_department_kpis()))
 
-with tab4:
+# Tab 5: External API Stream
+with tab5:
     st.subheader("🌐 External API Data Integration")
     st.caption("Live stream and staging area for third-party medical network records.")
 
@@ -95,7 +120,6 @@ with tab4:
         if not api_df.empty:
             st.success("Data successfully fetched from External API!")
 
-            # Check column names (Handles both 'City' and 'city')
             city_col = "City" if "City" in api_df.columns else ("city" if "city" in api_df.columns else None)
 
             # 1. KPI Summary Cards
@@ -126,5 +150,3 @@ with tab4:
             st.dataframe(api_df, use_container_width=True)
         else:
             st.error("Failed to fetch data from external API endpoint.")
-    
-               
