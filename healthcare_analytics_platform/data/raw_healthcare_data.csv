@@ -1,0 +1,17 @@
+Appointment_ID,Patient_ID,Patient_Name,Gender,Age,Doctor_Name,Department,Appointment_Date,Status,Consultation_Fee
+APT1001,P101,Aarav Sharma,Male,34,Dr. Rajesh Kumar,Cardiology,2026-01-05,Completed,1500.00
+APT1002,P102,Priya Patel,Female,28,Dr. Anita Roy,Dermatology,2026-01-06,Completed,800.00
+APT1003,P103,Rohan Verma,Male,45,Dr. Suresh Nair,Orthopedics,2026-01-07,Cancelled,1200.00
+APT1004,P104,Sneha Gupta,Female,52,Dr. Rajesh Kumar,Cardiology,2026-01-10,Completed,1500.00
+APT1005,P105,Vikram Singh,Male,61,Dr. Meena Iyer,Neurology,2026-01-12,No-Show,1000.00
+APT1001,P101,Aarav Sharma,Male,34,Dr. Rajesh Kumar,Cardiology,2026-01-05,Completed,1500.00
+APT1006,P106,Ananya Rao,Female,,Dr. Anita Roy,dermatology,2026-01-15,Completed,800.00
+APT1007,P107,Karan Malhotra,Male,29,Dr. Suresh Nair,Orthopedics,invalid-date,Completed,1200.00
+APT1008,P108,Neha Kapoor,Female,39,Dr. Meena Iyer,NEUROLOGY,2026-02-01,Completed,1000.00
+APT1009,P109,Amit Joshi,Male,50,Dr. Rajesh Kumar,Cardiology,2026-02-03,Cancelled,1500.00
+APT1010,P110,Pooja Hegde,Female,31,Dr. Anita Roy,Dermatology,2026-02-05,Completed,800.00
+APT1011,P111,Siddharth Das,Male,42,Dr. Suresh Nair,orthopedics,2026-02-08,Completed,1200.00
+APT1012,P112,Kavita Reddy,Female,67,Dr. Meena Iyer,Neurology,2026-02-12,Completed,1000.00
+APT1013,P113,Rahul Mehta,Male,23,Dr. Rajesh Kumar,Cardiology,2026-02-15,Completed,1500.00
+APT1014,P114,Divya Menon,Female,36,Dr. Anita Roy,Dermatology,2026-02-18,Cancelled,800.00
+APT1015,P115,Gaurav Taneja,Male,48,Dr. Suresh Nair,Orthopedics,2026-02-20,Completed,1200.00

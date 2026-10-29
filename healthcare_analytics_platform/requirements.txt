@@ -1,0 +1,10 @@
+pandas==2.2.2
+mysql-connector-python==8.4.0
+sqlalchemy==2.0.30
+openpyxl==3.1.2
+streamlit==1.35.0
+python-dotenv==1.0.1
+requests==2.32.2
+google-generativeai==0.7.1
+
+

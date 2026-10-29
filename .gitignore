@@ -1,0 +1,12 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.env
+.vscode/
+.idea/
+exports/*.xlsx
+data/*.json
+*.pbix.lock
+healthcare_analytics_platform.zip
+create_zip.py
