@@ -1,92 +1,76 @@
+
 import os
-import pandas as pd
 import streamlit as st
 import google.generativeai as genai
 
-# Config file fallback
-try:
-    from config import GEMINI_API_KEY
-except ImportError:
-    GEMINI_API_KEY = ""
 
+def get_api_key():
+    # Streamlit Cloud Secrets
+    try:
+        key = st.secrets["gemini"]["api_key"]
+        if key:
+            return key.strip()
+    except Exception:
+        pass
 
-def generate_template_summary(kpi_data, dept_df):
-    """Fallback function: Rule-based template generation when API key is missing or call fails."""
-    total = kpi_data.get("total_appointments", 0)
-    completed = kpi_data.get("completed_appointments", 0)
-    cancel_rate = kpi_data.get("cancellation_rate_pct", 0)
-    revenue = kpi_data.get("total_revenue", 0)
+    # Alternative Secrets format
+    try:
+        key = st.secrets["GEMINI_API_KEY"]
+        if key:
+            return key.strip()
+    except Exception:
+        pass
 
-    top_dept = "N/A"
-    if not dept_df.empty and "department_name" in dept_df.columns:
-        top_dept = dept_df.iloc[0]["department_name"]
-
-    return f"""
-    ### 📋 Executive Analytical Summary (Template Fallback)
-    
-    * **Total Patient Visits:** The platform recorded **{total}** total appointment requests.
-    * **Completion Rate:** **{completed}** appointments were completed successfully, generating **₹{revenue:,.2f}** in total revenue.
-    * **Cancellation Impact:** The overall appointment cancellation rate stands at **{cancel_rate}%**.
-    * **Top Department:** The department with the highest patient volume is **{top_dept}**.
-    
-    *Note: Summary auto-generated using rule-based calculations.*
-    """
+    # Local environment variable
+    return os.getenv("GEMINI_API_KEY", "").strip()
 
 
 def generate_executive_summary(kpi_data, dept_df):
-    """Generates an AI summary using Google Gemini API if key is present, otherwise falls back to template."""
-    
-    # Secrets loading sequence
-    api_key = GEMINI_API_KEY
+    api_key = get_api_key()
+
     if not api_key:
-        api_key = os.getenv("GEMINI_API_KEY", "")
-        
-    if not api_key:
-        try:
-            if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
-                api_key = st.secrets["GEMINI_API_KEY"]
-        except Exception:
-            api_key = ""
-
-    # Check if API key is valid
-    if not api_key or api_key.strip() in ["your_google_gemini_api_key_here", ""]:
-        return generate_template_summary(kpi_data, dept_df)
-
-    try:
-        genai.configure(api_key=api_key)
-        
-        # Exact model string required by the API
-        model = genai.GenerativeModel("gemini-3.8-flash")
-
-        dept_summary = (
-            dept_df.to_string(index=False)
-            if not dept_df.empty
-            else "No department data available."
+        raise ValueError(
+            "Gemini API key missing. Add it under Streamlit Cloud "
+            "Settings > Secrets using [gemini] and api_key."
         )
 
-        prompt = f"""
-        You are a healthcare data analyst. Synthesize the following exact calculated metrics into a concise, professional 4-bullet executive summary.
-        STRICT REQUIREMENT: Do NOT invent, extrapolate, or estimate any numbers. Use ONLY the exact numbers provided below.
+    genai.configure(api_key=api_key)
 
-        Exact Aggregated Metrics:
-        - Total Appointments: {kpi_data.get('total_appointments')}
-        - Completed Appointments: {kpi_data.get('completed_appointments')}
-        - Cancelled Appointments: {kpi_data.get('cancelled_appointments')}
-        - Cancellation Rate: {kpi_data.get('cancellation_rate_pct')}%
-        - Total Revenue: ₹{kpi_data.get('total_revenue')}
+    department_data = (
+        dept_df.to_string(index=False)
+        if dept_df is not None and not dept_df.empty
+        else "No department data available."
+    )
 
-        Department-wise Breakdown Table:
-        {dept_summary}
+    prompt = f"""
+You are a healthcare data analyst.
 
-        Provide concise insights in professional bullet points.
-        """
+Write a concise executive summary in 4 bullet points using
+only the metrics supplied below. Do not invent numbers.
+If the data is sample data, do not describe it as live patient data.
 
-        response = model.generate_content(prompt)
-        if response and response.text:
-            return f"### 🤖 AI Executive Summary\n\n{response.text}"
-        else:
-            return generate_template_summary(kpi_data, dept_df)
+Metrics:
+- Total appointments: {kpi_data.get('total_appointments', 0)}
+- Completed appointments: {kpi_data.get('completed_appointments', 0)}
+- Cancelled appointments: {kpi_data.get('cancelled_appointments', 0)}
+- No-show appointments: {kpi_data.get('noshow_appointments', 0)}
+- Cancellation rate: {kpi_data.get('cancellation_rate_pct', 0)}%
+- Total revenue: ₹{kpi_data.get('total_revenue', 0)}
 
-    except Exception as e:
-        st.error(f"Gemini API Error: {e}")
-        return generate_template_summary(kpi_data, dept_df)
+Department breakdown:
+{department_data}
+
+Explain the key patterns and provide practical recommendations
+without making unsupported claims.
+"""
+
+    # Use a model name supported by the current Gemini API access.
+    model = genai.GenerativeModel("gemini-3.8-flash")
+    response = model.generate_content(prompt)
+
+    if not response or not response.text:
+        raise RuntimeError(
+            "Gemini returned an empty response. Check API access and quota."
+        )
+
+    return "### 🤖 Gemini AI Executive Summary\n\n" + response.text
