@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import os
+import streamlit as st
+from PIL import Image
 
 # Streamlit config sabse pehle call honi chahiye (StreamlitAPIException fix)[cite: 2]
 st.set_page_config(page_title="Healthcare Analytics Platform", layout="wide")
@@ -61,11 +63,20 @@ with tab1:
         st.error(f"Error fetching metrics from database: {e}. Please run cleaning pipeline.")
 
 with tab2:
-    st.subheader("Data Cleaning & Quality Metrics")
-    if "quality_report" in st.session_state:
-        st.json(st.session_state["quality_report"])
-    else:
-        st.info("Upload a dataset and click 'Run Data Cleaning' in sidebar to view quality report.")
+    st.header("📊 Power BI Executive Analytics Dashboard")
+    st.info("💡 Interactive visual report built on Healthcare Analytics Warehouse.")
+    
+    # Power BI Dashboard Image Preview
+    image = Image.open('dashboard_preview.png')
+    st.image(image, caption='Healthcare Executive Dashboard (Power BI Desktop)', use_container_width=True)
+    
+    st.markdown("""
+    ### 📈 Executive Insights Summary:
+    * **Revenue & Appointment Volume:** Total Revenue (16K) and Total Volume (14) KPIs.
+    * **Department Distribution:** Patient load across Cardiology, Dermatology, Neurology, and Orthopedics.
+    * **Fulfillment Analysis:** Status breakdown comparing Completed (71.4%) vs Cancelled/No-Show appointments.
+    """)
+
 
 with tab3:
     st.subheader("GenAI-Powered Executive Summary")
